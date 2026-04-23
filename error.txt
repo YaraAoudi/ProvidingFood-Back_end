@@ -1,0 +1,15 @@
+System.Data.SqlClient.SqlException (0x80131904): Invalid column name 'IsActive'.
+Invalid column name 'StartDate'.
+Invalid column name 'EndDate'.
+   at System.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__126_0(Task`1 result)
+   at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+--- End of stack trace from previous location ---
+   at Dapper.SqlMapper.QueryRowAsync[T](IDbConnection cnn, Row row, Type effectiveType, CommandDefinition command) in /_/Dapper/SqlMapper.Async.cs:line 489
+   at ProvidingFood2.Service.ChallengeService.AddPointAsync(Int32 userId, String sessionId) in C:\Users\97158\source\repos\ProvidingFood2\ProvidingFood2\Service\ChallengeService.cs:line 21
+   at ProvidingFood2.Controllers.PaymentController.Webhook() in C:\Users\97158\source\repos\ProvidingFood2\ProvidingFood2\Controllers\PaymentController.cs:line 145
+ClientConnectionId:f8c55f49-9643-4f08-8355-d0f8db238c4e
+Error Number:207,State:1,Class:16
