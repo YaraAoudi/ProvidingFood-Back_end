@@ -24,6 +24,8 @@ VALUES
  @BasketCount, @ExpiryDate, @QRCode, @Status, @CreatedAt);
 
 SELECT CAST(SCOPE_IDENTITY() as int);", voucher);
+
+
 	}
 
 	public async Task<Voucher?> GetByCodeAsync(string code)
@@ -100,5 +102,15 @@ AND Status = 'Active'",
 
     }
 
-   
+    public async Task<int?> GetUserIdByBeneficiaryId(int beneficiaryId)
+    {
+        using var connection = new SqlConnection(_connectionString);
+
+        return await connection.ExecuteScalarAsync<int?>(
+            "SELECT UserId FROM Beneficiaries WHERE BeneficiaryId = @Id",
+            new { Id = beneficiaryId }
+        );
+    }
+
+
 }

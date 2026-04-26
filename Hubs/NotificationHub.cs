@@ -1,21 +1,27 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace ProvidingFood2.Hubs
 {
+    [Authorize]
     public class NotificationHub : Hub
     {
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
-            var userId = Context.User.FindFirst(JwtRegisteredClaimNames.Sub).Value;
+            var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId != null)
+            Console.WriteLine("=== SIGNALR CONNECTED ===");
+            Console.WriteLine("UserId: " + userId);
+            Console.WriteLine("ConnectionId: " + Context.ConnectionId);
+
+            if (string.IsNullOrEmpty(userId))
             {
-                Groups.AddToGroupAsync(Context.ConnectionId, userId);
+                Console.WriteLine("❌ userId is NULL");
             }
 
-            return base.OnConnectedAsync();
+            await base.OnConnectedAsync();
         }
     }
 }

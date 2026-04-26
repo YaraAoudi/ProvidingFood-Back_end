@@ -5,20 +5,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 
-// 🟢 CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(MyAllowSpecificOrigins, policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy
+            .WithOrigins("http://127.0.0.1:8080") // 👈 لازم تحدد المصدر
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials(); // 👈 مهم جداً
     });
 });
 
@@ -47,13 +50,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-
         ValidIssuer = jwtSettings["Issuer"],
         ValidAudience = jwtSettings["Audience"],
-
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(jwtSettings["SecretKey"])
-        )
+        ),
+
+        // ⭐ مهم جداً
+        NameClaimType = ClaimTypes.NameIdentifier,
+        RoleClaimType = ClaimTypes.Role
+    };
+
+    // ⭐⭐ أهم سطر ناقص عندك
+    options.MapInboundClaims = true;
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/notificationHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -76,8 +101,11 @@ builder.Services.AddScoped<IDonationIndividalRepository>(provider =>
     new DonationIndividalRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IFoodBondRepository>(provider =>
-    new FoodBondRepository(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+    new FoodBondRepository(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        provider.GetRequiredService<INotificationService>() 
+    )
+);
 builder.Services.AddHostedService<BondStatusBackgroundService>();
 
 builder.Services.AddScoped<IStoreRepository, StoreRepository>();
@@ -126,6 +154,7 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
 
 
 // 🟢 SignalR
@@ -146,6 +175,7 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 
 app.UseHttpsRedirection();
+
 
 app.UseCors(MyAllowSpecificOrigins);
 

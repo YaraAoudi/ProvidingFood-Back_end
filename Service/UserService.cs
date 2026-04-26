@@ -146,7 +146,7 @@ namespace ProvidingFood2.Service
 
 			var claims = new[]
 			{
-			new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
 			new Claim("fullName", fullName),
             new Claim(ClaimTypes.Email, email),
             new Claim("userTypeId", userTypeId.ToString()),

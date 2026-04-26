@@ -7,6 +7,7 @@ public interface IVoucherRepository
 	Task<Voucher?> GetByIdAsync(int id);
 	Task MarkAsUsedAsync(int voucherId);
     Task<IEnumerable<Voucher>> GetVoucherAsync();
-    
-	
+    Task<int?> GetUserIdByBeneficiaryId(int beneficiaryId);
+
+
 }

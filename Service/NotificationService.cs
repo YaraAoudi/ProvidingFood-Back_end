@@ -17,14 +17,20 @@ public class NotificationService : INotificationService
 
     public async Task SendNotificationAsync(int userId, string title, string message)
     {
+        Console.WriteLine("=== SENDING NOTIFICATION ===");
+        Console.WriteLine("To Group: " + userId);
+        Console.WriteLine("Title: " + title);
+        Console.WriteLine("Message: " + message);
+
         await _repo.CreateAsync(userId, title, message);
 
-        await _hub.Clients.Group(userId.ToString())
-            .SendAsync("ReceiveNotification", new
-            {
-                Title = title,
-                Message = message
-            });
+        await _hub.Clients.User(userId.ToString())
+     .SendAsync("ReceiveNotification", new
+     {
+         title,
+         message
+     });
+        Console.WriteLine("Notification sent via SignalR");
     }
     public async Task<IEnumerable<Notification>> GetMyNotifications(int userId)
     {

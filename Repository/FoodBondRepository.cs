@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using ProvidingFood2.DTO;
+using ProvidingFood2.Service;
 using System.Data.SqlClient;
 
 namespace ProvidingFood2.Repository
@@ -7,10 +8,11 @@ namespace ProvidingFood2.Repository
 	public class FoodBondRepository : IFoodBondRepository
 	{
 		private readonly string _connectionString;
-
-		public FoodBondRepository(string connectionString)
+        private readonly INotificationService _notificationService;
+        public FoodBondRepository(string connectionString , INotificationService notificationService)
 		{
 			_connectionString = connectionString;
+            _notificationService = notificationService;
 		}
 
 
@@ -73,8 +75,6 @@ namespace ProvidingFood2.Repository
         {
             await using var connection = new SqlConnection(_connectionString);
 
-
-            // 🔹 جيب السعر من جدول الإعدادات
             var amount = await connection.ExecuteScalarAsync<decimal>(
                 "SELECT Price FROM BondSettings");
 
@@ -88,7 +88,7 @@ namespace ProvidingFood2.Repository
 
             var qrCode = $"FBOND_{Guid.NewGuid()}";
 
-            return await connection.ExecuteScalarAsync<int>(
+            var bondId = await connection.ExecuteScalarAsync<int>(
                 @"INSERT INTO FoodBonds 
         (BeneficiaryId, RestaurantId, StatusId, QRCode, NumberOfMeals, ExpiryDate, Amount)
         OUTPUT INSERTED.BondId
@@ -100,10 +100,25 @@ namespace ProvidingFood2.Repository
                     QRCode = qrCode,
                     request.NumberOfMeals,
                     request.ExpiryDate,
-                    Amount = amount // 🔥 تخزين السعر
+                    Amount = amount
                 });
-        }
 
+            // 🔥🔥🔥 هون الإضافة
+            var userId = await connection.ExecuteScalarAsync<int?>(
+                "SELECT UserId FROM Beneficiaries WHERE BeneficiaryId = @Id",
+                new { Id = beneficiaryId });
+
+            if (userId != null)
+            {
+                await _notificationService.SendNotificationAsync(
+                    userId.Value,
+                    "🎁 تم استلام سند طعام",
+                    "تم إضافة سند جديد إلى حسابك"
+                );
+            }
+
+            return bondId;
+        }
         ///////////////////////////////////Function for get all Food Bond/////////////////////
         public async Task<FoodBondResponse?> GetFoodBondByIdAsync(int id)
 		{
